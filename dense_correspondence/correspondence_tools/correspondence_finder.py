@@ -319,7 +319,7 @@ def create_non_correspondences(uv_b_matches, img_b_shape, num_non_matches_per_ma
         img_b_mask_flat = img_b_mask.view(-1,1).squeeze(1)
         mask_b_indices_flat = torch.nonzero(img_b_mask_flat)
         if len(mask_b_indices_flat) == 0:
-            print "warning, empty mask b"
+            print("warning, empty mask b")
             uv_b_non_matches = get_random_uv_b_non_matches()
         else:
             num_samples = num_matches*num_non_matches_per_match
@@ -343,8 +343,8 @@ def create_non_correspondences(uv_b_matches, img_b_shape, num_non_matches_per_ma
     diffs_0 = copied_uv_b_matches_0 - uv_b_non_matches[0].type(dtype_float)
     diffs_1 = copied_uv_b_matches_1 - uv_b_non_matches[1].type(dtype_float)
 
-    diffs_0_flattened = diffs_0.view(-1,1)
-    diffs_1_flattened = diffs_1.view(-1,1)
+    diffs_0_flattened = diffs_0.contiguous().view(-1,1)
+    diffs_1_flattened = diffs_1.contiguous().view(-1,1)
 
     diffs_0_flattened = torch.abs(diffs_0_flattened).squeeze(1)
     diffs_1_flattened = torch.abs(diffs_1_flattened).squeeze(1)

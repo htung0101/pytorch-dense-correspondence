@@ -5,7 +5,7 @@ from torch.autograd import Variable
 class PixelwiseContrastiveLoss(object):
 
     def __init__(self, image_shape, config=None):
-    	self.type = "pixelwise_contrastive"
+        self.type = "pixelwise_contrastive"
         self.image_width  = image_shape[1]
         self.image_height = image_shape[0]
 
@@ -292,7 +292,8 @@ class PixelwiseContrastiveLoss(object):
         non_match_loss_vec, num_hard_negatives, _, _ = PCL.non_match_descriptor_loss(image_a_pred, image_b_pred, non_matches_a,
                                                                  non_matches_b, M=M_descriptor, invert=invert)
 
-        num_non_matches = long(non_match_loss_vec.size()[0])
+        
+        num_non_matches = int(non_match_loss_vec.size()[0])
 
 
         non_match_loss = non_match_loss_vec.sum()
