@@ -469,7 +469,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     else:
         img_a_mask = torch.from_numpy(img_a_mask).type(dtype_float)  
         
-        # Option A: This next line samples from img mask
+        # Option A: This next line samples only from img mask
         uv_a_vec = random_sample_from_masked_image_torch(img_a_mask, num_samples=num_attempts)
         if uv_a_vec[0] is None:
             return (None, None)
@@ -601,7 +601,8 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     zeros_vec = torch.zeros_like(depth2_vec)
 
     depth2_vec = where(depth2_vec < zeros_vec, zeros_vec, depth2_vec) # to be careful, prune any negative depths
-    depth2_vec = where(depth2_vec < z2_vec, zeros_vec, depth2_vec)    # prune occlusions
+    depth2_vec = where(depth2_vec < z2_vec, zeros_vec, depth2_vec)    # prune occlusions 
+    # depth from the projected image (frame1) is smaller than the depth computed from unprojected point from fram0
     non_occluded_indices = torch.nonzero(depth2_vec)
     if non_occluded_indices.dim() == 0:
         return (None, None)

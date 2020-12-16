@@ -251,11 +251,10 @@ class DenseCorrespondenceNetwork(nn.Module):
         :return: torch.Variable with shape [N, D, H, W],
         :rtype:
         """
-
-        res = self.fcn(img_tensor)
+        res = self.fcn(img_tensor) #image_tensor: 1 x 3 x 480 x 640
         if self._normalize:
             #print "normalizing descriptor norm"
-            norm = torch.norm(res, 2, 1) # [N,1,H,W]
+            norm = torch.norm(res, 2, 1) # [N,1,H,W] #l2 norm on the first dimension
             res = res/norm
 
 

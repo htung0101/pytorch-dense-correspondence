@@ -602,8 +602,13 @@ class DenseCorrespondenceEvaluation(object):
 
     @staticmethod
     def clip_pixel_to_image_size_and_round(uv, image_width, image_height):
-        u = min(int(round(uv[0])), image_width - 1)
-        v = min(int(round(uv[1])), image_height - 1)
+
+        if torch.is_tensor(uv[0]):
+            u = min(int(torch.round(uv[0])), image_width - 1)
+            v = min(int(torch.round(uv[1])), image_height - 1)
+        else:
+            u = min(int(round(uv[0])), image_width - 1)
+            v = min(int(round(uv[1])), image_height - 1)
         return (u,v)
 
     @staticmethod
@@ -1500,7 +1505,7 @@ class DenseCorrespondenceEvaluation(object):
 
         ordering = ["standard", "reverse"]
 
-        for kp_name, data_a in keypoint_data_a['keypoints'].iteritems():
+        for kp_name, data_a in keypoint_data_a['keypoints'].items():
             if kp_name not in keypoint_data_b['keypoints']:
                 raise ValueError("keypoint %s appears in one list of annotated data but"
                                  "not the other" %(kp_name))
@@ -1724,8 +1729,8 @@ class DenseCorrespondenceEvaluation(object):
         image_height, image_width = depth_a.shape[0], depth_a.shape[1]
 
         def clip_pixel_to_image_size_and_round(uv):
-            u = min(int(round(uv[0])), image_width - 1)
-            v = min(int(round(uv[1])), image_height - 1)
+            u = min(int(torch.round(uv[0])), image_width - 1)
+            v = min(int(torch.round(uv[1])), image_height - 1)
             return [u,v]
 
         uv_a = clip_pixel_to_image_size_and_round((kp_a.pt[0], kp_a.pt[1]))
@@ -1854,7 +1859,7 @@ class DenseCorrespondenceEvaluation(object):
         evaluation_labeled_data_paths += dataset.config["multi_object"]["evaluation_labeled_data_path"]
         
         # add all of the single object lists
-        for object_key, val in dataset.config["single_object"].iteritems():
+        for object_key, val in dataset.config["single_object"].items():
             if "evaluation_labeled_data_path" in val:
                 evaluation_labeled_data_paths += val["evaluation_labeled_data_path"]
 
@@ -2286,7 +2291,7 @@ class DenseCorrespondenceEvaluation(object):
             update_stats(stats['mask_image'], mask_image_stats)
 
 
-        for key, val in stats.iteritems():
+        for key, val in stats.items():
             val['mean'] = 1.0/num_images * val['mean']
             for field in val:
                 val[field] = val[field].tolist()
@@ -2587,7 +2592,7 @@ class DenseCorrespondenceEvaluation(object):
 
         print("ALL")
         if not use_3d:
-            for key, value in descriptors_known_objects_samples.iteritems():
+            for key, value in descriptors_known_objects_samples.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
 
             if plot_background:
@@ -2596,21 +2601,21 @@ class DenseCorrespondenceEvaluation(object):
             plt.show()
         
         if use_3d:
-            for key, value in descriptors_known_objects_samples_xy.iteritems():
+            for key, value in descriptors_known_objects_samples_xy.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_xy[:,0], descriptors_background_samples_xy[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
 
-            for key, value in descriptors_known_objects_samples_yz.iteritems():
+            for key, value in descriptors_known_objects_samples_yz.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_yz[:,0], descriptors_background_samples_yz[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
 
-            for key, value in descriptors_known_objects_samples_xz.iteritems():
+            for key, value in descriptors_known_objects_samples_xz.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_xz[:,0], descriptors_background_samples_xz[:,1], alpha=0.5, label="background")

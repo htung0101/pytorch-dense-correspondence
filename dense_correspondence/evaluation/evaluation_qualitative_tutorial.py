@@ -12,7 +12,7 @@ utils.add_dense_correspondence_to_python_path()
 from dense_correspondence.evaluation.evaluation import DenseCorrespondenceEvaluationPlotter as DCEP
 
 folder_name = "tutorials"
-path_to_nets = os.path.join("code/data_volume/pdc/trained_models", folder_name)
+path_to_nets = os.path.join("../pdc/trained_models", folder_name)
 path_to_nets = utils.convert_to_absolute_path(path_to_nets)
 all_nets = sorted(os.listdir(path_to_nets))
 nets_to_plot = []
@@ -24,12 +24,13 @@ for net in nets_list:
 p = DCEP()
 dc_source_dir = utils.getDenseCorrespondenceSourceDir()
 
+
 network_name = nets_to_plot[0]
-path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/train/data.csv")
+path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/train/data.csv")
 fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, save=False)
 
 for network_name in nets_to_plot[1:]:
-    path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/train/data.csv")
+    path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/train/data.csv")
     fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, previous_fig_axes=fig_axes, save=False)
 
 _, axes = fig_axes
@@ -41,11 +42,11 @@ p = DCEP()
 dc_source_dir = utils.getDenseCorrespondenceSourceDir()
 
 network_name = nets_to_plot[0]
-path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/test/data.csv")
+path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/test/data.csv")
 fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, save=False)
 
 for network_name in nets_to_plot[1:]:
-    path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/test/data.csv")
+    path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/test/data.csv")
     fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, previous_fig_axes=fig_axes, save=False)
 
 _, axes = fig_axes
@@ -56,11 +57,11 @@ p = DCEP()
 dc_source_dir = utils.getDenseCorrespondenceSourceDir()
 
 network_name = nets_to_plot[0]
-path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/cross_scene/data.csv")
+path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/cross_scene/data.csv")
 fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, save=False)
 
 for network_name in nets_to_plot[1:]:
-    path_to_csv = os.path.join(dc_source_dir, "data_volume", "pdc", "trained_models", network_name, "analysis/cross_scene/data.csv")
+    path_to_csv = os.path.join(dc_source_dir, "../", "pdc", "trained_models", network_name, "analysis/cross_scene/data.csv")
     fig_axes = DCEP.run_on_single_dataframe(path_to_csv, label=network_name, previous_fig_axes=fig_axes, save=False)
 
 _, axes = fig_axes
