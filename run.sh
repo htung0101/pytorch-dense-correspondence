@@ -11,3 +11,6 @@
 
 
 
+
+python dense_correspondence/dataset/simple_datasets_test.py
+

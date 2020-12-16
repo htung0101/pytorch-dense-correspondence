@@ -1,0 +1,19 @@
+# data folders:
+logs_proto:
+    scene_name:
+        processed:
+            image_masks:
+                * xxx_visible_mask.png: just scale [0, 1] image to [0, 255] so it is visible
+                * xxx_mask.png: binary image indicating the object
+            images:
+                * xxx_rgb.png
+                * camera_info.yaml: 
+                    camera_intrinsics. Only "camera_matrix" and "image_height" and "image_width" are used
+                * pose_data.yml
+                    camera_extrinsics. world_T_cam: camera_to_world
+            rendered_images:
+
+
+# todo:
+
+spartan_dataset_mask, line 652: add argument for intrinsic matrix K
