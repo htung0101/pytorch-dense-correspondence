@@ -21,7 +21,6 @@ def get_loss(pixelwise_contrastive_loss, match_type,
     :rtypes: each pytorch Variables
 
     """
-    import ipdb; ipdb.set_trace()
     verbose = False
 
     if (match_type == SpartanDatasetDataType.SINGLE_OBJECT_WITHIN_SCENE).all():

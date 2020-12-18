@@ -624,7 +624,10 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         SD = SpartanDataset
 
+
         image_a_idx = self.get_random_image_index(scene_name)
+        intrinsics = self.get_camera_intrinsics(scene_name=scene_name)
+
         image_a_rgb, image_a_depth, image_a_mask, image_a_pose = self.get_rgbd_mask_pose(scene_name, image_a_idx)
 
         metadata['image_a_idx'] = image_a_idx
@@ -652,7 +655,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         uv_a, uv_b = correspondence_finder.batch_find_pixel_correspondences(image_a_depth_numpy, image_a_pose,
                                                                             image_b_depth_numpy, image_b_pose,
                                                                             img_a_mask=correspondence_mask,
-                                                                            num_attempts=self.num_matching_attempts)
+                                                                            num_attempts=self.num_matching_attempts, K=intrinsics.K)
 
         if for_synthetic_multi_object:
             return image_a_rgb, image_b_rgb, image_a_depth, image_b_depth, image_a_mask, image_b_mask, uv_a, uv_b

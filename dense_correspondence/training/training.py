@@ -93,9 +93,9 @@ class DenseCorrespondenceTraining(object):
         self._dataset.load_all_pose_data()
         self._dataset.set_parameters_from_training_config(self._config)
 
-        for data in self._dataset:
-            print(data)
-            import ipdb; ipdb.set_trace()
+        # for data in self._dataset:
+        #     print(data)
+        #     import ipdb; ipdb.set_trace()
 
         self._data_loader = torch.utils.data.DataLoader(self._dataset, batch_size=batch_size,
                                           shuffle=True, num_workers=num_workers, drop_last=True)

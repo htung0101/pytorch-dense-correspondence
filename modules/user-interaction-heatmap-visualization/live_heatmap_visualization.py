@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import copy
+import argparse
 
 import dense_correspondence_manipulation.utils.utils as utils
 dc_source_dir = utils.getDenseCorrespondenceSourceDir()
@@ -28,8 +29,6 @@ COLOR_RED = np.array([0, 0, 255])
 COLOR_GREEN = np.array([0,255,0])
 
 utils.set_default_cuda_visible_devices()
-eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', 'evaluation.yaml')
-EVAL_CONFIG = utils.getDictFromYamlFilename(eval_config_filename)
 
 
 
@@ -54,9 +53,9 @@ class HeatmapVisualization(object):
         p: pause/un-pause
     """
 
-    def __init__(self, config):
+    def __init__(self, config, eval_config):
         self._config = config
-        self._dce = DenseCorrespondenceEvaluation(EVAL_CONFIG)
+        self._dce = DenseCorrespondenceEvaluation(eval_config)
         self._load_networks()
         self._reticle_color = COLOR_GREEN
         self._paused = False
@@ -80,9 +79,9 @@ class HeatmapVisualization(object):
                 self._network_reticle_color[network_name] = COLOR_RED
             else:
                 self._network_reticle_color[network_name] = label_colors[idx]
-
             if self._dataset is None:
                 self._dataset = dcn.load_training_dataset()
+
 
     def load_specific_dataset(self):
         dataset_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence',
@@ -357,13 +356,25 @@ class HeatmapVisualization(object):
                     print("pausing")
                     self._paused = True
 
-
 if __name__ == "__main__":
-    dc_source_dir = utils.getDenseCorrespondenceSourceDir()
-    config_file = os.path.join(dc_source_dir, 'config', 'dense_correspondence', 'heatmap_vis', 'heatmap.yaml')
-    config = utils.getDictFromYamlFilename(config_file)
 
-    heatmap_vis = HeatmapVisualization(config)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--heatmap_yaml", type=str, default="heatmap.yaml")
+    parser.add_argument("--evaluation_yaml", type=str, default="evaluation.yaml")
+
+    args = parser.parse_args()
+
+
+    dc_source_dir = utils.getDenseCorrespondenceSourceDir()
+    config_file = os.path.join(dc_source_dir, 'config', 'dense_correspondence', 'heatmap_vis', args.heatmap_yaml)
+    config = utils.getDictFromYamlFilename(config_file)
+    
+    eval_config_filename = os.path.join(utils.getDenseCorrespondenceSourceDir(), 'config', 'dense_correspondence', 'evaluation', args.evaluation_yaml)
+    eval_config = utils.getDictFromYamlFilename(eval_config_filename)
+
+
+
+    heatmap_vis = HeatmapVisualization(config, eval_config)
     print("starting heatmap vis")
     heatmap_vis.run()
     cv2.destroyAllWindows()

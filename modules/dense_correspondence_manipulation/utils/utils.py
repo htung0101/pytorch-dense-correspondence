@@ -412,8 +412,8 @@ class CameraIntrinsics(object):
 
     @staticmethod
     def from_yaml_file(filename):
-        config = getDictFromYamlFilename(filename)
 
+        config = getDictFromYamlFilename(filename)
         fx = config['camera_matrix']['data'][0]
         cx = config['camera_matrix']['data'][2]
 
