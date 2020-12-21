@@ -162,7 +162,10 @@ class PixelwiseContrastiveLoss(object):
             matches_a_descriptors = matches_a_descriptors.unsqueeze(0)
             matches_b_descriptors = matches_b_descriptors.unsqueeze(0)
 
-        match_loss = 1.0 / num_matches * (matches_a_descriptors - matches_b_descriptors).pow(2).sum()
+        if num_matches == 0:
+            match_loss = torch.zeros((1)).cuda()
+        else:
+            match_loss = 1.0 / num_matches * (matches_a_descriptors - matches_b_descriptors).pow(2).sum()
 
         return match_loss, matches_a_descriptors, matches_b_descriptors
 
@@ -300,7 +303,11 @@ class PixelwiseContrastiveLoss(object):
 
         if self._debug:
             self._debug_data['num_hard_negatives'] = num_hard_negatives
-            self._debug_data['fraction_hard_negatives'] = num_hard_negatives * 1.0/num_non_matches
+
+            if num_non_matches == 0:
+                self._debug_data['fraction_hard_negatives'] = 0
+            else:
+                self._debug_data['fraction_hard_negatives'] = num_hard_negatives * 1.0/num_non_matches
 
         return non_match_loss, num_hard_negatives
 
