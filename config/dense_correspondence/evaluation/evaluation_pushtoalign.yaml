@@ -4,8 +4,9 @@ params:
 
 networks:
   pushtoalign_1220_3:
-    path_to_network_params: /home/htung/Documents/2020/Fall/pdc/trained_models/tutorials/pushtoalign_1220_3/003501.pth
-
+    #path_to_network_params: /home/htung/Documents/2020/Fall/pdc/trained_models/tutorials/pushtoalign_1220_3/003501.pth
+    #path_to_network_params: /home/htung/Documents/2020/Fall/pdc/trained_models/tutorials/pushtoalign_1220_350k_matrix_3/010000.pth
+    path_to_network_params: /home/htung/Documents/2020/Fall/pdc/trained_models/tutorials/pushtoalign_1220_350k_matrix_decay1000_3/110000.pth
 dataset: [] # which dataset to use, not used for now
 
 output_dir: analysis

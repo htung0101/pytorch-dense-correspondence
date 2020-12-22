@@ -34,15 +34,19 @@ if __name__ == "__main__":
 
     train_config = utils.getDictFromYamlFilename(train_config_file)
     dataset = SpartanDataset(config=config)
+    
+    dataset_test = None
+    if train_config["training"]["compute_test_loss"]:
+        dataset_test=SpartanDataset(mode="test", config=config)
 
     logging_dir = "trained_models/tutorials"
-    num_iterations = 3500
+    #num_iterations = 3500
     d = 3 # the descriptor dimension
     name = f"{args.run_prefix}_%d" %(d)
     train_config["training"]["logging_dir_name"] = name
     train_config["training"]["logging_dir"] = logging_dir
     train_config["dense_correspondence_network"]["descriptor_dimension"] = d
-    train_config["training"]["num_iterations"] = num_iterations
+    #train_config["training"]["num_iterations"] = num_iterations
 
 
     TRAIN = True
@@ -50,7 +54,7 @@ if __name__ == "__main__":
 
     if TRAIN:
         print("training descriptor of dimension %d" %(d))
-        train = DenseCorrespondenceTraining(dataset=dataset, config=train_config)
+        train = DenseCorrespondenceTraining(dataset=dataset,  dataset_test=dataset_test, config=train_config)
         train.run()
         print("finished training descriptor of dimension %d" %(d))
 

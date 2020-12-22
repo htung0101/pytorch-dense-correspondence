@@ -291,7 +291,11 @@ class DenseCorrespondenceTraining(object):
         # from training_progress_visualizer import TrainingProgressVisualizer
         # TPV = TrainingProgressVisualizer()
 
-        for epoch in range(50):  # loop over the dataset multiple times
+        timesteps = 0
+        num_epochs = int((max_num_iterations - start_iteration  - 1)/len(self._data_loader)) + 1
+
+
+        for epoch in range(num_epochs):  # loop over the dataset multiple times
 
             for i, data in enumerate(self._data_loader, 0):
                 loss_current_iteration += 1
@@ -348,6 +352,7 @@ class DenseCorrespondenceTraining(object):
 
                 loss.backward()
                 optimizer.step()
+                timesteps += 1
 
                 #if i % 10 == 0:
                 # TPV.update(self._dataset, dcn, loss_current_iteration, now_training_object_id=metadata["object_id"])
@@ -413,14 +418,15 @@ class DenseCorrespondenceTraining(object):
 
                     if data_type == SpartanDatasetDataType.DIFFERENT_OBJECT:
                         self._tensorboard_logger.log_value("train different object", loss.item(), loss_current_iteration)
-
                 update_plots(loss, match_loss, masked_non_match_loss, background_non_match_loss, blind_non_match_loss)
 
                 if loss_current_iteration % save_rate == 0:
                     self.save_network(dcn, optimizer, loss_current_iteration, logging_dict=self._logging_dict)
 
                 if loss_current_iteration % logging_rate == 0:
+                    logging.info(self._config["training"]["logging_dir_name"])
                     logging.info("Training on iteration %d of %d" %(loss_current_iteration, max_num_iterations))
+
 
                     logging.info("single iteration took %.3f seconds" %(elapsed))
 
@@ -438,11 +444,19 @@ class DenseCorrespondenceTraining(object):
                     gc.collect()
 
                     dcn.eval()
-                    test_loss, test_match_loss, test_non_match_loss = DCE.compute_loss_on_dataset(dcn,
+                    test_loss, test_match_loss, test_masked_non_match_loss,test_background_non_match_loss, test_blind_non_match_loss = DCE.compute_loss_on_dataset(dcn,
                                                                                                   self._data_loader_test, self._config['loss_function'], num_iterations=self._config['training']['test_loss_num_iterations'])
 
+                    if not loss_composer.is_zero_loss(test_match_loss):
+                        self._tensorboard_logger.log_value("test match loss", test_match_loss.item(), loss_current_iteration)
+                    if not loss_composer.is_zero_loss(test_masked_non_match_loss):
+                        self._tensorboard_logger.log_value("test masked non match loss", test_masked_non_match_loss.item(), loss_current_iteration)
+                    if not loss_composer.is_zero_loss(test_background_non_match_loss):
+                        self._tensorboard_logger.log_value("test background non match loss", test_background_non_match_loss.item(), loss_current_iteration)
+                    if not loss_composer.is_zero_loss(test_blind_non_match_loss):
+                        self._tensorboard_logger.log_value("test blind non match loss", test_blind_non_match_loss.item(), loss_current_iteration)
                     # delete these variables so we can free GPU memory
-                    del test_loss, test_match_loss, test_non_match_loss
+                    del test_loss, test_match_loss, test_masked_non_match_loss, test_background_non_match_loss, test_blind_non_match_loss
 
                     # make sure to set the network back to train mode
                     dcn.train()

@@ -1,0 +1,6 @@
+logs_root_path: logs_proto/open_door_1207_with_images512
+
+single_object_scenes_config_files:
+- open_door_1207_with_images512.yaml
+
+multi_object_scenes_config_files: []

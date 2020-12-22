@@ -16,4 +16,4 @@ logs_proto:
 
 # todo:
 
-spartan_dataset_mask, line 652: add argument for intrinsic matrix K
+1. add validation error log during training

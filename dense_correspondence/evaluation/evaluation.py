@@ -20,12 +20,13 @@ from torchvision import transforms
 
 from dense_correspondence_manipulation.utils.constants import *
 from dense_correspondence_manipulation.utils.utils import CameraIntrinsics
-from dense_correspondence.dataset.spartan_dataset_masked import SpartanDataset
+from dense_correspondence.dataset.spartan_dataset_masked import SpartanDataset, SpartanDatasetDataType
 import dense_correspondence.correspondence_tools.correspondence_plotter as correspondence_plotter
 import dense_correspondence.correspondence_tools.correspondence_finder as correspondence_finder
 from dense_correspondence.network.dense_correspondence_network import DenseCorrespondenceNetwork
 from dense_correspondence.loss_functions.pixelwise_contrastive_loss import PixelwiseContrastiveLoss
 import dense_correspondence_manipulation.utils.visualization as vis_utils
+
 
 import dense_correspondence.evaluation.plotting as dc_plotting
 
@@ -2094,16 +2095,19 @@ class DenseCorrespondenceEvaluation(object):
         # loss_vec = np.zeros(num_iterations)
         loss_vec = []
         match_loss_vec = []
-        non_match_loss_vec = []
+        masked_non_match_loss_vec = []
+        background_non_match_loss_vec = []
+        blind_non_match_loss_vec = []
         counter = 0
         pixelwise_contrastive_loss = PixelwiseContrastiveLoss(dcn.image_shape, config=loss_config)
-
+        pcl = pixelwise_contrastive_loss
         batch_size = 1
 
         for i, data in enumerate(data_loader, 0):
 
+
             # get the inputs
-            data_type, img_a, img_b, matches_a, matches_b, non_matches_a, non_matches_b, metadata = data
+            data_type, img_a, img_b, matches_a, matches_b, non_matches_a, non_matches_b, background_non_matches_a, background_non_matches_b, blind_non_matches_a, blind_non_matches_b, metadata = data
             data_type = data_type[0]
 
             if len(matches_a[0]) == 0:
@@ -2113,12 +2117,13 @@ class DenseCorrespondenceEvaluation(object):
             img_a = Variable(img_a.cuda(), requires_grad=False)
             img_b = Variable(img_b.cuda(), requires_grad=False)
 
-            if data_type == "matches":
+            if data_type == SpartanDatasetDataType.SINGLE_OBJECT_WITHIN_SCENE:
                 matches_a = Variable(matches_a.cuda().squeeze(0), requires_grad=False)
                 matches_b = Variable(matches_b.cuda().squeeze(0), requires_grad=False)
                 non_matches_a = Variable(non_matches_a.cuda().squeeze(0), requires_grad=False)
                 non_matches_b = Variable(non_matches_b.cuda().squeeze(0), requires_grad=False)
-
+            else:
+                raise ValueError("No such datatype", date_type)
             # run both images through the network
             image_a_pred = dcn.forward(img_a)
             image_a_pred = dcn.process_network_output(image_a_pred, batch_size)
@@ -2126,41 +2131,113 @@ class DenseCorrespondenceEvaluation(object):
             image_b_pred = dcn.forward(img_b)
             image_b_pred = dcn.process_network_output(image_b_pred, batch_size)
 
+
+            background_non_matches_a = Variable(background_non_matches_a.cuda().squeeze(0), requires_grad=False)
+            background_non_matches_b = Variable(background_non_matches_b.cuda().squeeze(0), requires_grad=False)
+
+            blind_non_matches_a = Variable(blind_non_matches_a.cuda().squeeze(0), requires_grad=False)
+            blind_non_matches_b = Variable(blind_non_matches_b.cuda().squeeze(0), requires_grad=False)
+
+
             # get loss
-            if data_type == "matches":
-                loss, match_loss, non_match_loss = \
-                    pixelwise_contrastive_loss.get_loss(image_a_pred,
+            if data_type == SpartanDatasetDataType.SINGLE_OBJECT_WITHIN_SCENE:
+                match_loss, masked_non_match_loss, num_masked_hard_negatives = \
+                    pixelwise_contrastive_loss.get_loss_matched_and_non_matched_with_l2(image_a_pred,
                                                         image_b_pred,
                                                         matches_a,
                                                         matches_b,
                                                         non_matches_a,
-                                                        non_matches_b)
+                                                        non_matches_b,  M_descriptor=pcl._config["M_masked"])
+
+
+                if pcl._config["use_l2_pixel_loss_on_background_non_matches"]:
+                    background_non_match_loss, num_background_hard_negatives =\
+                        pixelwise_contrastive_loss.non_match_loss_with_l2_pixel_norm(image_a_pred, image_b_pred, matches_b, 
+                            background_non_matches_a, background_non_matches_b, M_descriptor=pcl._config["M_background"])    
+                    
+                else:
+                    background_non_match_loss, num_background_hard_negatives =\
+                        pixelwise_contrastive_loss.non_match_loss_descriptor_only(image_a_pred, image_b_pred,
+                                                                                background_non_matches_a, background_non_matches_b,
+                                                                                M_descriptor=pcl._config["M_background"])
+                    
+                    
+
+                def zero_loss():
+                    return Variable(torch.FloatTensor([0]).cuda())
+
+                blind_non_match_loss = zero_loss()
+                num_blind_hard_negatives = 1
+                if not (SpartanDataset.is_empty(blind_non_matches_a.data)):
+                    blind_non_match_loss, num_blind_hard_negatives =\
+                        pixelwise_contrastive_loss.non_match_loss_descriptor_only(image_a_pred, image_b_pred,
+                                                                                blind_non_matches_a, blind_non_matches_b,
+                                                                                M_descriptor=pcl._config["M_masked"])
 
 
 
-                loss_vec.append(loss.data[0])
-                non_match_loss_vec.append(non_match_loss.data[0])
-                match_loss_vec.append(match_loss.data[0])
+                total_num_hard_negatives = num_masked_hard_negatives + num_background_hard_negatives
+                total_num_hard_negatives = max(total_num_hard_negatives, 1)
 
+                if pcl._config["scale_by_hard_negatives"]:
+                    scale_factor = total_num_hard_negatives
+
+                    masked_non_match_loss_scaled = masked_non_match_loss*1.0/max(num_masked_hard_negatives, 1)
+
+                    background_non_match_loss_scaled = background_non_match_loss*1.0/max(num_background_hard_negatives, 1)
+
+                    blind_non_match_loss_scaled = blind_non_match_loss*1.0/max(num_blind_hard_negatives, 1)
+                else:
+                    # we are not currently using blind non-matches
+                    num_masked_non_matches = max(len(masked_non_matches_a),1)
+                    num_background_non_matches = max(len(background_non_matches_a),1)
+                    num_blind_non_matches = max(len(blind_non_matches_a),1)
+                    scale_factor = num_masked_non_matches + num_background_non_matches
+
+
+                    masked_non_match_loss_scaled = masked_non_match_loss*1.0/num_masked_non_matches
+
+                    background_non_match_loss_scaled = background_non_match_loss*1.0/num_background_non_matches
+
+                    blind_non_match_loss_scaled = blind_non_match_loss*1.0/num_blind_non_matches
+
+
+                non_match_loss = 1.0/scale_factor * (masked_non_match_loss + background_non_match_loss)
+
+                loss = pcl._config["match_loss_weight"] * match_loss + \
+                pcl._config["non_match_loss_weight"] * non_match_loss
+
+
+                loss_vec.append(loss.data.item())
+                masked_non_match_loss_vec.append(masked_non_match_loss_scaled.data.item())
+                background_non_match_loss_vec.append(background_non_match_loss_scaled.data.item())
+                blind_non_match_loss_vec.append(blind_non_match_loss_scaled.data.item())
+                match_loss_vec.append(match_loss.data.item())
+            else:
+                raise ValueError("No such datatype", date_type)
 
             if i > num_iterations:
                 break
 
         loss_vec = np.array(loss_vec)
         match_loss_vec = np.array(match_loss_vec)
-        non_match_loss_vec = np.array(non_match_loss_vec)
+        masked_non_match_loss_vec = np.array(masked_non_match_loss_vec)
+        background_non_match_loss_vec = np.array(background_non_match_loss_vec)
+        blind_non_match_loss_vec = np.array(blind_non_match_loss_vec)
 
         loss = np.average(loss_vec)
         match_loss = np.average(match_loss_vec)
-        non_match_loss = np.average(non_match_loss_vec)
+        masked_non_match_loss = np.average(masked_non_match_loss_vec)
+        background_non_match_loss = np.average(background_non_match_loss_vec)
+        blind_non_match_loss = np.average(blind_non_match_loss_vec)
 
-        return loss, match_loss, non_match_loss
+        return loss, match_loss, masked_non_match_loss, background_non_match_loss, blind_non_match_loss
 
 
 
     @staticmethod
     def compute_descriptor_statistics_on_dataset(dcn, dataset, num_images=100,
-                                                 save_to_file=True, filename=None):
+                                                 save_to_file=True, filenamlosse=None):
         """
         Computes the statistics of the descriptors on the dataset
         :param dcn:
